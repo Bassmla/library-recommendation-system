@@ -30,7 +30,7 @@ export function Home() {
             Discover Your Next
             <br />
             <span className="bg-gradient-to-r from-violet-300 via-pink-300 to-indigo-300 bg-clip-text text-transparent">
-              Favorite Book
+              Favorite BookS
             </span>
           </h1>
 
