@@ -27,7 +27,7 @@ export function Home() {
           </div>
 
           <h1 className="text-6xl md:text-8xl font-extrabold mb-6 text-white leading-tight tracking-tight">
-            Let us discover Your Next
+             Discover Your Next
             <br />
             <span className="bg-gradient-to-r from-violet-300 via-pink-300 to-indigo-300 bg-clip-text text-transparent">
               Favorite Books
