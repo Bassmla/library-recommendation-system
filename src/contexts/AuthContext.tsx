@@ -145,12 +145,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = async () => {
     setIsLoading(true);
     try {
-      // TODO: Replace with Cognito Auth.signOut()
-      setUser(null);
-      localStorage.removeItem('user');
+     await signOut();
+    setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
-      throw error;
     } finally {
       setIsLoading(false);
     }
