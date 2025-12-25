@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useEffect } from 'react';
 import { User } from '@/types';
-
+import { signIn, signUp, signOut, getCurrentUser } from 'aws-amplify/auth';
 /**
  * Authentication context type definition
  */
@@ -123,18 +123,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // TODO: Replace with Cognito Auth.signIn(email, password)
-      // Mock implementation for development
-      void password; // Will be used with Cognito
-      const mockUser: User = {
-        id: '1',
-        email,
-        name: 'John Doe',
+      const { isSignedIn } = await signIn({ username: email, password });
+    if (isSignedIn) {
+      const user = await getCurrentUser();
+      setUser({
+        id: user.userId,
+        email: email,
+        name: user.username,
         role: 'user',
         createdAt: new Date().toISOString(),
-      };
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
+      });
+    }
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -160,18 +159,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signup = async (email: string, password: string, name: string) => {
     setIsLoading(true);
     try {
-      // TODO: Replace with Cognito Auth.signUp
-      // Mock implementation for development
-      void password; // Will be used with Cognito
-      const mockUser: User = {
-        id: '1',
-        email,
-        name,
-        role: 'user',
-        createdAt: new Date().toISOString(),
-      };
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
+      await signUp({
+      username: email,
+      password,
+      options: {
+        userAttributes: {
+          email,
+          name,
+        },
+      },
+    });
     } catch (error) {
       console.error('Signup error:', error);
       throw error;
