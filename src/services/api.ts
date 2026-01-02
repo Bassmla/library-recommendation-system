@@ -1,98 +1,29 @@
 import { Book, ReadingList, Review, Recommendation } from '@/types';
 import { mockBooks, mockReadingLists } from './mockData';
 
-/**
- * ============================================================================
- * API SERVICE LAYER - BACKEND COMMUNICATION
- * ============================================================================
- *
- * ⚠️ IMPORTANT: This file currently uses MOCK DATA for all API calls.
- *
- * TO IMPLEMENT AWS BACKEND:
- * Follow the step-by-step guide in IMPLEMENTATION_GUIDE.md
- *
- * Quick Reference:
- * - Week 2: Implement Books API (getBooks, getBook, createBook, etc.)
- * - Week 2: Implement Reading Lists API
- * - Week 3: Add Cognito authentication headers
- * - Week 4: Implement AI recommendations with Bedrock
- *
- * ============================================================================
- * IMPLEMENTATION CHECKLIST:
- * ============================================================================
- *
- * [ ] Week 1: Set up AWS account and first Lambda function
- * [ ] Week 2: Create DynamoDB tables (Books, ReadingLists)
- * [ ] Week 2: Deploy Lambda functions for Books API
- * [ ] Week 2: Deploy Lambda functions for Reading Lists API
- * [ ] Week 2: Set VITE_API_BASE_URL in .env file
- * [ ] Week 3: Set up Cognito User Pool
- * [ ] Week 3: Install aws-amplify: npm install aws-amplify
- * [ ] Week 3: Configure Amplify in src/main.tsx
- * [ ] Week 3: Update AuthContext with Cognito functions
- * [ ] Week 3: Implement getAuthHeaders() function below
- * [ ] Week 3: Add Cognito authorizer to API Gateway
- * [ ] Week 4: Deploy Bedrock recommendations Lambda
- * [ ] Week 4: Update getRecommendations() function
- * [ ] Week 4: Remove all mock data returns
- * [ ] Week 4: Delete src/services/mockData.ts
- *
- * ============================================================================
- */
+import { fetchAuthSession } from 'aws-amplify/auth';
 
-// TODO: Uncomment this after deploying API Gateway (Week 2, Day 4)
-// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-/**
- * TODO: Implement this function in Week 3, Day 4
- *
- * This function gets the JWT token from Cognito and adds it to API requests.
- *
- * Implementation:
- * 1. Import: import { fetchAuthSession } from 'aws-amplify/auth';
- * 2. Get session: const session = await fetchAuthSession();
- * 3. Extract token: const token = session.tokens?.idToken?.toString();
- * 4. Return headers with Authorization: Bearer {token}
- *
- * See IMPLEMENTATION_GUIDE.md - Week 3, Day 5-7 for complete code.
- */
-// async function getAuthHeaders() {
-//   try {
-//     const session = await fetchAuthSession();
-//     const token = session.tokens?.idToken?.toString();
-//     return {
-//       'Authorization': `Bearer ${token}`,
-//       'Content-Type': 'application/json'
-//     };
-//   } catch {
-//     return {
-//       'Content-Type': 'application/json'
-//     };
-//   }
-// }
+async function getAuthHeaders() {
+  try {
+    const session = await fetchAuthSession();
+    const token = session.tokens?.idToken?.toString();
+    return {
+      Authorization: Bearer ${token},
+      'Content-Type': 'application/json',
+    };
+  } catch {
+    return {
+      'Content-Type': 'application/json',
+    };
+  }
+}
 
-/**
- * Get all books from the catalog
- *
- * TODO: Replace with real API call in Week 2, Day 3-4
- *
- * Implementation steps:
- * 1. Deploy Lambda function: library-get-books (see IMPLEMENTATION_GUIDE.md)
- * 2. Create API Gateway endpoint: GET /books
- * 3. Uncomment API_BASE_URL at top of file
- * 4. Replace mock code below with:
- *
- * const response = await fetch(`${API_BASE_URL}/books`);
- * if (!response.ok) throw new Error('Failed to fetch books');
- * return response.json();
- *
- * Expected response: Array of Book objects from DynamoDB
- */
 export async function getBooks(): Promise<Book[]> {
-  // TODO: Remove this mock implementation after deploying Lambda
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(mockBooks), 500);
-  });
+  const response = await fetch(${API_BASE_URL}/books);
+  if (!response.ok) throw new Error('Failed to fetch books');
+  return response.json();
 }
 
 /**
