@@ -10,7 +10,7 @@ async function getAuthHeaders() {
     const session = await fetchAuthSession();
     const token = session.tokens?.idToken?.toString();
     return {
-      Authorization: Bearer ${token},
+      Authorization: 'Bearer ${token}',
       'Content-Type': 'application/json',
     };
   } catch {
@@ -21,7 +21,7 @@ async function getAuthHeaders() {
 }
 
 export async function getBooks(): Promise<Book[]> {
-  const response = await fetch(${API_BASE_URL}/books);
+  const response = await fetch('${API_BASE_URL}/books');
   if (!response.ok) throw new Error('Failed to fetch books');
   return response.json();
 }
@@ -199,45 +199,17 @@ export async function getReadingLists(): Promise<ReadingList[]> {
   });
 }
 
-/**
- * Create a new reading list
- *
- * TODO: Replace with real API call in Week 2, Day 5-7
- *
- * Implementation steps:
- * 1. Deploy Lambda function: library-create-reading-list
- * 2. Lambda should generate UUID for id and timestamps
- * 3. Lambda should get userId from Cognito token
- * 4. Create API Gateway endpoint: POST /reading-lists
- * 5. Add Cognito authorizer (Week 3)
- * 6. Replace mock code below with:
- *
- * const headers = await getAuthHeaders();
- * const response = await fetch(`${API_BASE_URL}/reading-lists`, {
- *   method: 'POST',
- *   headers,
- *   body: JSON.stringify(list)
- * });
- * if (!response.ok) throw new Error('Failed to create reading list');
- * return response.json();
- *
- * Expected response: Complete ReadingList object with generated id and timestamps
- */
 export async function createReadingList(
   list: Omit<ReadingList, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<ReadingList> {
-  // TODO: Remove this mock implementation after deploying Lambda
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newList: ReadingList = {
-        ...list,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      resolve(newList);
-    }, 500);
+  const headers = await getAuthHeaders();
+  const response = await fetch('${API_BASE_URL}/reading-lists', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(list),
   });
+  if (!response.ok) throw new Error('Failed to create reading list');
+  return response.json();
 }
 
 /**
