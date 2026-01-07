@@ -118,57 +118,17 @@ export async function deleteBook(): Promise<void> {
   });
 }
 
-/**
- * Get AI-powered book recommendations using Amazon Bedrock
- *
- * TODO: Replace with real API call in Week 4, Day 1-2
- *
- * Implementation steps:
- * 1. Enable Bedrock model access in AWS Console (Claude 3 Haiku recommended)
- * 2. Deploy Lambda function: library-get-recommendations (see IMPLEMENTATION_GUIDE.md)
- * 3. Create API Gateway endpoint: POST /recommendations
- * 4. Add Cognito authorizer
- * 5. Update function signature to accept query parameter:
- *    export async function getRecommendations(query: string): Promise<Recommendation[]>
- * 6. Replace mock code below with:
- *
- * const headers = await getAuthHeaders();
- * const response = await fetch(`${API_BASE_URL}/recommendations`, {
- *   method: 'POST',
- *   headers,
- *   body: JSON.stringify({ query })
- * });
- * if (!response.ok) throw new Error('Failed to get recommendations');
- * const data = await response.json();
- * return data.recommendations;
- *
- * Expected response: Array of recommendations with title, author, reason, confidence
- *
- * Documentation: https://docs.aws.amazon.com/bedrock/latest/userguide/
- */
-export async function getRecommendations(): Promise<Recommendation[]> {
-  // TODO: Remove this mock implementation after deploying Bedrock Lambda
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const mockRecommendations: Recommendation[] = [
-        {
-          id: '1',
-          bookId: '1',
-          reason:
-            'Based on your interest in philosophical fiction, this book explores themes of choice and regret.',
-          confidence: 0.92,
-        },
-        {
-          id: '2',
-          bookId: '2',
-          reason:
-            'If you enjoy science-based thrillers, this space adventure combines humor with hard science.',
-          confidence: 0.88,
-        },
-      ];
-      resolve(mockRecommendations);
-    }, 1000);
+
+export async function getRecommendations(query: string): Promise<Recommendation[]> {
+  const headers = await getAuthHeaders();
+  const response = await fetch('${API_BASE_URL}/recommendations', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ query }),
   });
+  if (!response.ok) throw new Error('Failed to get recommendations');
+  const data = await response.json();
+  return data.recommendations;
 }
 
 /**
