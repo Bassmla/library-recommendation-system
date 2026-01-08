@@ -1,35 +1,52 @@
-import { Book, ReadingList, Recommendation } from '@/types';
+import { Book, ReadingList, Review, Recommendation } from '@/types';
 import { fetchAuthSession } from 'aws-amplify/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-async function getAuthHeaders() {
+async function getAuthHeaders(): Promise<Record<string, string>> {
   try {
     const session = await fetchAuthSession();
     const token = session.tokens?.idToken?.toString();
-    return {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    };
+    if (token) {
+      return {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+    }
   } catch {
-    return {
-      'Content-Type': 'application/json',
-    };
+    // Fall through to return basic headers
   }
+  
+  return {
+    'Content-Type': 'application/json',
+  };
 }
 
 export async function getBooks(): Promise<Book[]> {
-  const response = await fetch(`${API_BASE_URL}/books`);
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(`${API_BASE_URL}/books`, {
+    headers,
+  });
+
   if (!response.ok) throw new Error('Failed to fetch books');
   return response.json();
 }
 
+
 export async function getBook(id: string): Promise<Book | null> {
-  const response = await fetch(`${API_BASE_URL}/books/${id}`);
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(`${API_BASE_URL}/books/${id}`, {
+    headers,
+  });
+
   if (response.status === 404) return null;
   if (!response.ok) throw new Error('Failed to fetch book');
+
   return response.json();
 }
+
 
 export async function createBook(book: Omit<Book, 'id'>): Promise<Book> {
   const headers = await getAuthHeaders();
@@ -44,34 +61,36 @@ export async function createBook(book: Omit<Book, 'id'>): Promise<Book> {
   return response.json();
 }
 
-/**
- * Update an existing book (admin only)
- * TODO: Replace with PUT /books/:id API call
- */
-export async function updateBook(id: string, book: Partial<Book>): Promise<Book> {
-  // Mock implementation
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const existingBook = mockBooks.find((b) => b.id === id);
-      const updatedBook: Book = {
-        ...existingBook!,
-        ...book,
-        id,
-      };
-      resolve(updatedBook);
-    }, 500);
+export async function updateBook(
+  id: string,
+  book: Partial<Book>
+): Promise<Book> {
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(`${API_BASE_URL}/books/${id}`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(book),
   });
+
+  if (!response.ok) {
+    throw new Error('Failed to update book');
+  }
+
+  return response.json();
 }
 
-/**
- * Delete a book (admin only)
- * TODO: Replace with DELETE /books/:id API call
- */
-export async function deleteBook(): Promise<void> {
-  // Mock implementation
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(), 300);
+export async function deleteBook(id: string): Promise<void> {
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(`${API_BASE_URL}/books/${id}`, {
+    method: 'DELETE',
+    headers,
   });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete book');
+  }
 }
 
 export async function getRecommendations(query: string): Promise<Recommendation[]> {
@@ -86,10 +105,11 @@ export async function getRecommendations(query: string): Promise<Recommendation[
   return data.recommendations;
 }
 
+
 export async function getReadingLists(): Promise<ReadingList[]> {
   const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE_URL}/reading-lists`, {
-    headers,
+    headers
   });
   if (!response.ok) {
     throw new Error('Failed to fetch reading lists');
@@ -128,6 +148,7 @@ export async function updateReadingList(
 
   return response.json();
 }
+
 
 export async function deleteReadingList(id: string): Promise<void> {
   const headers = await getAuthHeaders();
