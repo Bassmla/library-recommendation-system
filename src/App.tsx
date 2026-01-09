@@ -10,6 +10,7 @@ import { Recommendations } from './pages/Recommendations';
 import { ReadingLists } from './pages/ReadingLists';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
+import { VerifyEmail } from './pages/VerifyEmail';
 import { Admin } from './pages/Admin';
 import { NotFound } from './pages/NotFound';
 
@@ -38,6 +39,7 @@ function App() {
               />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
               <Route
                 path="/admin"
                 element={

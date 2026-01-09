@@ -2,10 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/common/Button';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { getBook } from '@/services/api';
-import { Book } from '@/types';
+import { ReadingListSelector } from '@/components/books/ReadingListSelector';
+import { WriteReview } from '@/components/books/WriteReview';
+import { ReviewCard } from '@/components/books/ReviewCard';
+import { getBook, getReviews } from '@/services/api';
+import { Book, Review } from '@/types';
 import { formatRating } from '@/utils/formatters';
 import { handleApiError } from '@/utils/errorHandling';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
  * BookDetail page component
@@ -13,12 +17,18 @@ import { handleApiError } from '@/utils/errorHandling';
 export function BookDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [book, setBook] = useState<Book | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const [isReadingListSelectorOpen, setIsReadingListSelectorOpen] = useState(false);
+  const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadBook(id);
+      loadReviews(id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -39,9 +49,50 @@ export function BookDetail() {
     }
   };
 
-  // TODO: Implement add to reading list functionality
+  const loadReviews = async (bookId: string) => {
+    setIsLoadingReviews(true);
+    try {
+      const reviewsData = await getReviews(bookId);
+      setReviews(reviewsData);
+    } catch (error) {
+      console.error('Error loading reviews:', error);
+      // Don't show error to user for reviews - just show empty state
+      setReviews([]);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  };
+
   const handleAddToList = () => {
-    alert('Add to reading list functionality coming soon!');
+    if (!isAuthenticated) {
+      alert('Please log in to add books to your reading lists');
+      navigate('/login');
+      return;
+    }
+    setIsReadingListSelectorOpen(true);
+  };
+
+  const handleWriteReview = () => {
+    if (!isAuthenticated) {
+      alert('Please log in to write a review');
+      navigate('/login');
+      return;
+    }
+    setIsWriteReviewOpen(true);
+  };
+
+  const handleReviewCreated = (newReview: Review) => {
+    setReviews([newReview, ...reviews]);
+  };
+
+  const handleReviewUpdated = (updatedReview: Review) => {
+    setReviews(reviews.map(review => 
+      review.id === updatedReview.id ? updatedReview : review
+    ));
+  };
+
+  const handleReviewDeleted = (reviewId: string) => {
+    setReviews(reviews.filter(review => review.id !== reviewId));
   };
 
   if (isLoading) {
@@ -166,7 +217,7 @@ export function BookDetail() {
                   </svg>
                   Add to Reading List
                 </Button>
-                <Button variant="outline" size="lg">
+                <Button variant="outline" size="lg" onClick={handleWriteReview}>
                   <svg
                     className="w-5 h-5 mr-2 inline"
                     fill="none"
@@ -187,31 +238,107 @@ export function BookDetail() {
           </div>
         </div>
 
-        {/* TODO: Implement reviews section */}
+        {/* Reading List Selector Modal */}
+        {book && (
+          <ReadingListSelector
+            bookId={book.id}
+            bookTitle={book.title}
+            isOpen={isReadingListSelectorOpen}
+            onClose={() => setIsReadingListSelectorOpen(false)}
+          />
+        )}
+
+        {/* Reviews Section */}
         <div className="mt-8 glass-effect rounded-3xl shadow-xl border border-white/20 p-8 md:p-12">
-          <h2 className="text-3xl font-bold text-slate-900 mb-6 flex items-center">
-            <span className="w-1 h-8 bg-gradient-to-b from-violet-600 to-indigo-600 rounded-full mr-3"></span>
-            Reviews
-          </h2>
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-violet-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-                />
-              </svg>
-            </div>
-            <p className="text-slate-600 text-lg">Reviews section coming soon...</p>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl font-bold text-slate-900 flex items-center">
+              <span className="w-1 h-8 bg-gradient-to-b from-violet-600 to-indigo-600 rounded-full mr-3"></span>
+              Reviews ({reviews.length})
+            </h2>
+            {isAuthenticated && (
+              <Button variant="primary" onClick={handleWriteReview}>
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Write Review
+              </Button>
+            )}
           </div>
+
+          {isLoadingReviews ? (
+            <div className="flex justify-center py-12">
+              <LoadingSpinner size="lg" />
+            </div>
+          ) : reviews.length > 0 ? (
+            <div className="space-y-6">
+              {reviews.map((review) => (
+                <ReviewCard
+                  key={review.id}
+                  review={review}
+                  onReviewUpdated={handleReviewUpdated}
+                  onReviewDeleted={handleReviewDeleted}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-violet-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">No reviews yet</h3>
+              <p className="text-slate-600 mb-4">
+                Be the first to share your thoughts about this book!
+              </p>
+              {isAuthenticated ? (
+                <Button variant="primary" onClick={handleWriteReview}>
+                  Write the First Review
+                </Button>
+              ) : (
+                <p className="text-sm text-slate-500">
+                  <button
+                    onClick={() => navigate('/login')}
+                    className="text-violet-600 hover:text-violet-700 font-semibold"
+                  >
+                    Log in
+                  </button>{' '}
+                  to write a review
+                </p>
+              )}
+            </div>
+          )}
         </div>
+
+        {/* Modals */}
+        {book && (
+          <>
+            <ReadingListSelector
+              bookId={book.id}
+              bookTitle={book.title}
+              isOpen={isReadingListSelectorOpen}
+              onClose={() => setIsReadingListSelectorOpen(false)}
+            />
+            
+            <WriteReview
+              bookId={book.id}
+              bookTitle={book.title}
+              isOpen={isWriteReviewOpen}
+              onClose={() => setIsWriteReviewOpen(false)}
+              onReviewCreated={handleReviewCreated}
+            />
+          </>
+        )}
       </div>
     </div>
   );

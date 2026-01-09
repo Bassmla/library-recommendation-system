@@ -9,19 +9,30 @@ import { LoadingSpinner } from './LoadingSpinner';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireModerator?: boolean;
+  allowedRoles?: ('user' | 'admin' | 'moderator')[];
 }
 
 /**
  * ProtectedRoute component wraps routes that require authentication
  *
  * @example
- * <Route path="/admin" element={
- *   <ProtectedRoute requireAdmin>
- *     <AdminPage />
- *   </ProtectedRoute>
- * } />
+ * // Admin only
+ * <ProtectedRoute requireAdmin>
+ *   <AdminPage />
+ * </ProtectedRoute>
+ * 
+ * // Admin or Moderator
+ * <ProtectedRoute allowedRoles={['admin', 'moderator']}>
+ *   <ModerationPage />
+ * </ProtectedRoute>
  */
-export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
+export function ProtectedRoute({ 
+  children, 
+  requireAdmin = false, 
+  requireModerator = false,
+  allowedRoles 
+}: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
@@ -36,7 +47,16 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     return <Navigate to="/login" replace />;
   }
 
+  // Check role-based access
   if (requireAdmin && user?.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+
+  if (requireModerator && !['admin', 'moderator'].includes(user?.role || '')) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(user?.role || 'user')) {
     return <Navigate to="/" replace />;
   }
 

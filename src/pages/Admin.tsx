@@ -3,7 +3,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { Modal } from '@/components/common/Modal';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { getBooks, createBook, deleteBook } from '@/services/api';
+import { getBooks, createBook, updateBook, deleteBook, getAdminMetrics } from '@/services/api';
 import { Book } from '@/types';
 import { handleApiError, showSuccess } from '@/utils/errorHandling';
 
@@ -12,8 +12,16 @@ import { handleApiError, showSuccess } from '@/utils/errorHandling';
  */
 export function Admin() {
   const [books, setBooks] = useState<Book[]>([]);
+  const [metrics, setMetrics] = useState({
+    totalBooks: 0,
+    totalUsers: 0,
+    totalReadingLists: 0,
+    totalReviews: 0,
+  });
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [newBook, setNewBook] = useState({
     title: '',
     author: '',
@@ -27,6 +35,7 @@ export function Admin() {
 
   useEffect(() => {
     loadBooks();
+    loadMetrics();
   }, []);
 
   const loadBooks = async () => {
@@ -41,34 +50,84 @@ export function Admin() {
     }
   };
 
+  const loadMetrics = async () => {
+    setIsLoadingMetrics(true);
+    try {
+      const data = await getAdminMetrics();
+      setMetrics(data);
+    } catch (error) {
+      console.error('Error loading metrics:', error);
+      // Don't show error to user for metrics - just use defaults
+    } finally {
+      setIsLoadingMetrics(false);
+    }
+  };
+
   const handleCreateBook = async () => {
-    if (!newBook.title || !newBook.author) {
-      alert('Please fill in required fields');
+    if (!newBook.title || !newBook.author || !newBook.genre) {
+      alert('Please fill in required fields (Title, Author, Genre)');
       return;
     }
 
     try {
-      // TODO: Replace with Lambda API call
       const created = await createBook(newBook);
       setBooks([...books, created]);
       setIsModalOpen(false);
       resetForm();
       showSuccess('Book added successfully!');
+      // Refresh metrics
+      loadMetrics();
+    } catch (error) {
+      handleApiError(error);
+    }
+  };
+
+  const handleEditBook = (book: Book) => {
+    setEditingBook(book);
+    setNewBook({
+      title: book.title,
+      author: book.author,
+      genre: book.genre,
+      description: book.description,
+      coverImage: book.coverImage,
+      rating: book.rating,
+      publishedYear: book.publishedYear,
+      isbn: book.isbn,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleUpdateBook = async () => {
+    if (!editingBook) return;
+    
+    if (!newBook.title || !newBook.author || !newBook.genre) {
+      alert('Please fill in required fields (Title, Author, Genre)');
+      return;
+    }
+
+    try {
+      const updated = await updateBook(editingBook.id, newBook);
+      setBooks(books.map(book => book.id === editingBook.id ? updated : book));
+      setIsModalOpen(false);
+      setEditingBook(null);
+      resetForm();
+      showSuccess('Book updated successfully!');
     } catch (error) {
       handleApiError(error);
     }
   };
 
   const handleDeleteBook = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this book?')) {
+    if (!confirm('Are you sure you want to delete this book? This action cannot be undone.')) {
       return;
     }
 
     try {
-      // TODO: Replace with Lambda API call
-      await deleteBook();
+      await deleteBook(id);
       setBooks(books.filter((book) => book.id !== id));
       showSuccess('Book deleted successfully!');
+      // Refresh metrics
+      loadMetrics();
     } catch (error) {
       handleApiError(error);
     }
@@ -85,6 +144,13 @@ export function Admin() {
       publishedYear: new Date().getFullYear(),
       isbn: '',
     });
+    setEditingBook(null);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setEditingBook(null);
+    resetForm();
   };
 
   if (isLoading) {
@@ -104,20 +170,50 @@ export function Admin() {
         </div>
 
         {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
             <h3 className="text-lg font-semibold mb-2 opacity-90">Total Books</h3>
-            <p className="text-5xl font-bold">{books.length}</p>
+            {isLoadingMetrics ? (
+              <div className="flex items-center">
+                <LoadingSpinner size="sm" className="mr-2" />
+                <span className="text-2xl">Loading...</span>
+              </div>
+            ) : (
+              <p className="text-5xl font-bold">{metrics.totalBooks}</p>
+            )}
           </div>
           <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
             <h3 className="text-lg font-semibold mb-2 opacity-90">Total Users</h3>
-            <p className="text-5xl font-bold">42</p>
-            <p className="text-sm mt-1 opacity-75">Placeholder data</p>
+            {isLoadingMetrics ? (
+              <div className="flex items-center">
+                <LoadingSpinner size="sm" className="mr-2" />
+                <span className="text-2xl">Loading...</span>
+              </div>
+            ) : (
+              <p className="text-5xl font-bold">{metrics.totalUsers}</p>
+            )}
           </div>
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
-            <h3 className="text-lg font-semibold mb-2 opacity-90">Active Reading Lists</h3>
-            <p className="text-5xl font-bold">18</p>
-            <p className="text-sm mt-1 opacity-75">Placeholder data</p>
+            <h3 className="text-lg font-semibold mb-2 opacity-90">Reading Lists</h3>
+            {isLoadingMetrics ? (
+              <div className="flex items-center">
+                <LoadingSpinner size="sm" className="mr-2" />
+                <span className="text-2xl">Loading...</span>
+              </div>
+            ) : (
+              <p className="text-5xl font-bold">{metrics.totalReadingLists}</p>
+            )}
+          </div>
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+            <h3 className="text-lg font-semibold mb-2 opacity-90">Total Reviews</h3>
+            {isLoadingMetrics ? (
+              <div className="flex items-center">
+                <LoadingSpinner size="sm" className="mr-2" />
+                <span className="text-2xl">Loading...</span>
+              </div>
+            ) : (
+              <p className="text-5xl font-bold">{metrics.totalReviews}</p>
+            )}
           </div>
         </div>
 
@@ -150,7 +246,11 @@ export function Admin() {
                     <td className="py-3 px-4">{book.rating}</td>
                     <td className="py-3 px-4">
                       <div className="flex gap-2">
-                        <Button variant="secondary" size="sm">
+                        <Button 
+                          variant="secondary" 
+                          size="sm"
+                          onClick={() => handleEditBook(book)}
+                        >
                           Edit
                         </Button>
                         <Button
@@ -169,11 +269,15 @@ export function Admin() {
           </div>
         </div>
 
-        {/* Add Book Modal */}
-        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New Book">
+        {/* Add/Edit Book Modal */}
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={handleModalClose} 
+          title={editingBook ? 'Edit Book' : 'Add New Book'}
+        >
           <div className="max-h-[60vh] overflow-y-auto">
             <Input
-              label="Title"
+              label="Title *"
               type="text"
               value={newBook.title}
               onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
@@ -181,7 +285,7 @@ export function Admin() {
             />
 
             <Input
-              label="Author"
+              label="Author *"
               type="text"
               value={newBook.author}
               onChange={(e) => setNewBook({ ...newBook, author: e.target.value })}
@@ -189,7 +293,7 @@ export function Admin() {
             />
 
             <Input
-              label="Genre"
+              label="Genre *"
               type="text"
               value={newBook.genre}
               onChange={(e) => setNewBook({ ...newBook, genre: e.target.value })}
@@ -237,10 +341,18 @@ export function Admin() {
             />
 
             <div className="flex gap-3 mt-6">
-              <Button variant="primary" onClick={handleCreateBook} className="flex-1">
-                Add Book
+              <Button 
+                variant="primary" 
+                onClick={editingBook ? handleUpdateBook : handleCreateBook} 
+                className="flex-1"
+              >
+                {editingBook ? 'Update Book' : 'Add Book'}
               </Button>
-              <Button variant="secondary" onClick={() => setIsModalOpen(false)} className="flex-1">
+              <Button 
+                variant="secondary" 
+                onClick={handleModalClose} 
+                className="flex-1"
+              >
                 Cancel
               </Button>
             </div>

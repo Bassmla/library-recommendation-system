@@ -152,8 +152,8 @@ Use this checklist to track your progress through the 4-week project.
 - [ ] Install AWS Amplify: `npm install aws-amplify`
 - [ ] Update `.env` file:
   ```
-  VITE_COGNITO_USER_POOL_ID=us-east-1_abc123
-  VITE_COGNITO_CLIENT_ID=1a2b3c4d5e6f7g8h9i0j
+  VITE_COGNITO_USER_POOL_ID=us-east-1_zjmY3U4E8
+  VITE_COGNITO_CLIENT_ID=2ootb3jkfpdgq7bca0bi66u9fn
   VITE_AWS_REGION=us-east-1
   ```
 - [ ] Add Amplify configuration to `src/main.tsx` (see IMPLEMENTATION_GUIDE.md)

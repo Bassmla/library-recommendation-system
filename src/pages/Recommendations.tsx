@@ -141,9 +141,14 @@ export function Recommendations() {
 
             {/* Display recommendations with reasons */}
             <div className="space-y-6 mb-12">
-              {recommendations.map((rec, index) => {
-                const book = recommendedBooks[index];
-                if (!book) return null;
+              {recommendations.map((rec) => {
+                // For AI recommendations, use the title/author from the AI response
+                // For database recommendations, find the matching book
+                const book = recommendedBooks.find(b => b.id === rec.bookId);
+                const displayTitle = rec.title || book?.title || 'Unknown Title';
+                const displayAuthor = rec.author || book?.author || 'Unknown Author';
+                const displayGenre = book?.genre || 'AI Recommendation';
+                const displayCover = book?.coverImage || 'https://via.placeholder.com/112x160?text=AI+Rec';
 
                 return (
                   <div
@@ -152,16 +157,16 @@ export function Recommendations() {
                   >
                     <div className="flex items-start gap-6">
                       <img
-                        src={book.coverImage}
-                        alt={book.title}
+                        src={displayCover}
+                        alt={displayTitle}
                         className="w-28 h-40 object-cover rounded-xl shadow-lg"
                         onError={(e) => {
-                          e.currentTarget.src = 'https://via.placeholder.com/112x160?text=No+Cover';
+                          e.currentTarget.src = 'https://via.placeholder.com/112x160?text=AI+Rec';
                         }}
                       />
                       <div className="flex-1">
-                        <h3 className="text-2xl font-bold text-slate-900 mb-2">{book.title}</h3>
-                        <p className="text-slate-600 mb-3 font-medium">by {book.author}</p>
+                        <h3 className="text-2xl font-bold text-slate-900 mb-2">{displayTitle}</h3>
+                        <p className="text-slate-600 mb-3 font-medium">by {displayAuthor}</p>
                         <p className="text-slate-700 mb-4 leading-relaxed">{rec.reason}</p>
                         <div className="flex flex-wrap items-center gap-3">
                           <div className="bg-gradient-to-r from-violet-100 to-indigo-100 px-3 py-1.5 rounded-xl border border-violet-200">
@@ -169,7 +174,12 @@ export function Recommendations() {
                               Confidence: {Math.round(rec.confidence * 100)}%
                             </span>
                           </div>
-                          <span className="badge-gradient px-3 py-1.5 text-sm">{book.genre}</span>
+                          <span className="badge-gradient px-3 py-1.5 text-sm">{displayGenre}</span>
+                          {rec.title && (
+                            <span className="bg-gradient-to-r from-amber-100 to-orange-100 px-3 py-1.5 rounded-xl border border-amber-200 text-sm text-amber-700 font-semibold">
+                              AI Powered
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

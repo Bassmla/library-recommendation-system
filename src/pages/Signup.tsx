@@ -61,10 +61,28 @@ export function Signup() {
 
     setIsLoading(true);
     try {
-      await signup(email, password, name);
-      navigate('/');
-    } catch (error) {
-      handleApiError(error);
+      const result = await signup(email, password, name);
+      
+      if (result.needsVerification) {
+        // Navigate to verification page with email
+        navigate('/verify-email', { state: { email } });
+      } else {
+        // User is already verified, redirect to login
+        navigate('/login');
+      }
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      
+      // Handle specific Cognito errors
+      if (error.name === 'UsernameExistsException') {
+        setErrors({ email: 'An account with this email already exists' });
+      } else if (error.name === 'InvalidPasswordException') {
+        setErrors({ password: 'Password does not meet requirements' });
+      } else if (error.name === 'InvalidParameterException') {
+        setErrors({ email: 'Invalid email format' });
+      } else {
+        handleApiError(error);
+      }
     } finally {
       setIsLoading(false);
     }

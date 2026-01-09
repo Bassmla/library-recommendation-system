@@ -3,20 +3,25 @@ import { Button } from '@/components/common/Button';
 import { Modal } from '@/components/common/Modal';
 import { Input } from '@/components/common/Input';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { ReadingListDetail } from '@/components/books/ReadingListDetail';
 import { getReadingLists, createReadingList } from '@/services/api';
 import { ReadingList } from '@/types';
 import { formatDate } from '@/utils/formatters';
 import { handleApiError, showSuccess } from '@/utils/errorHandling';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
  * ReadingLists page component
  */
 export function ReadingLists() {
+  const { user } = useAuth();
   const [lists, setLists] = useState<ReadingList[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListDescription, setNewListDescription] = useState('');
+  const [selectedList, setSelectedList] = useState<ReadingList | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   useEffect(() => {
     loadLists();
@@ -36,27 +41,60 @@ export function ReadingLists() {
   };
 
   const handleCreateList = async () => {
+    console.log('Creating reading list...', { user, newListName, newListDescription });
+    
     if (!newListName.trim()) {
       alert('Please enter a list name');
       return;
     }
 
+    if (!user) {
+      console.error('No user found in auth context');
+      alert('You must be logged in to create a reading list');
+      return;
+    }
+
+    console.log('User authenticated, proceeding with API call');
+
     try {
-      // TODO: Replace with DynamoDB put operation
-      const newList = await createReadingList({
-        userId: '1', // TODO: Get from auth context
+      const listData = {
+        userId: user.id,
         name: newListName,
         description: newListDescription,
         bookIds: [],
-      });
+      };
+      
+      console.log('Calling createReadingList with:', listData);
+      
+      const newList = await createReadingList(listData);
+      
+      console.log('Reading list created successfully:', newList);
+      
       setLists([...lists, newList]);
       setIsModalOpen(false);
       setNewListName('');
       setNewListDescription('');
       showSuccess('Reading list created successfully!');
     } catch (error) {
+      console.error('Error creating reading list:', error);
       handleApiError(error);
     }
+  };
+
+  const handleListClick = (list: ReadingList) => {
+    setSelectedList(list);
+    setIsDetailOpen(true);
+  };
+
+  const handleListUpdated = (updatedList: ReadingList) => {
+    setLists(lists.map(list => list.id === updatedList.id ? updatedList : list));
+    setSelectedList(updatedList);
+  };
+
+  const handleListDeleted = (listId: string) => {
+    setLists(lists.filter(list => list.id !== listId));
+    setSelectedList(null);
+    setIsDetailOpen(false);
   };
 
   if (isLoading) {
@@ -109,11 +147,12 @@ export function ReadingLists() {
               <div
                 key={list.id}
                 className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-xl hover:border-blue-300 transition-all duration-300 cursor-pointer"
+                onClick={() => handleListClick(list)}
               >
                 <h3 className="text-xl font-bold text-slate-900 mb-2">{list.name}</h3>
                 <p className="text-slate-600 mb-4 line-clamp-2">{list.description}</p>
                 <div className="flex items-center justify-between text-sm text-slate-500">
-                  <span>{list.bookIds.length} books</span>
+                  <span>{list.bookIds?.length || 0} books</span>
                   <span>Created {formatDate(list.createdAt)}</span>
                 </div>
               </div>
@@ -156,6 +195,17 @@ export function ReadingLists() {
             </div>
           </div>
         </Modal>
+
+        {/* Reading List Detail Modal */}
+        {selectedList && (
+          <ReadingListDetail
+            readingList={selectedList}
+            isOpen={isDetailOpen}
+            onClose={() => setIsDetailOpen(false)}
+            onListUpdated={handleListUpdated}
+            onListDeleted={handleListDeleted}
+          />
+        )}
       </div>
     </div>
   );

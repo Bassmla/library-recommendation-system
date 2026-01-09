@@ -18,7 +18,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'moderator';
   createdAt: string;
 }
 
@@ -36,9 +36,11 @@ export interface Review {
   id: string;
   bookId: string;
   userId: string;
+  userName: string;
   rating: number;
   comment: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Recommendation {
@@ -46,6 +48,9 @@ export interface Recommendation {
   bookId: string;
   reason: string;
   confidence: number;
+  // Optional fields for AI-generated recommendations
+  title?: string;
+  author?: string;
 }
 
 export interface AuthState {

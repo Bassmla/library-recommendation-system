@@ -27,10 +27,10 @@ export function Home() {
           </div>
 
           <h1 className="text-6xl md:text-8xl font-extrabold mb-6 text-white leading-tight tracking-tight">
-             Discover Your Next
+            Discover Your Next
             <br />
             <span className="bg-gradient-to-r from-violet-300 via-pink-300 to-indigo-300 bg-clip-text text-transparent">
-              Favorite Books
+              Favorites Books
             </span>
           </h1>
 
@@ -59,7 +59,7 @@ export function Home() {
               <div className="text-slate-300">Books Available</div>
             </div>
             <div className="glass-dark rounded-2xl p-6">
-              <div className="text-4xl font-bold text-white mb-2">50,000+</div>
+              <div className="text-4xl font-bold text-white mb-2">67,000+</div>
               <div className="text-slate-300">Happy Readers</div>
             </div>
             <div className="glass-dark rounded-2xl p-6">
@@ -78,7 +78,7 @@ export function Home() {
               <span className="gradient-text">Why Choose LibraryAI?</span>
             </h2>
             <p className="text-slate-600 text-xl max-w-2xl mx-auto">
-              Experience the future of book discovery with our intelligent recommendation system
+              Experience the future of book discovery with our AI recommendation system
             </p>
           </div>
 
